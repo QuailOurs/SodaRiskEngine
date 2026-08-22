@@ -1,0 +1,18 @@
+services:
+  server:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "9999:9999"
+
+  console:
+    build:
+      context: ..
+      dockerfile: deploy/console.Dockerfile
+    depends_on:
+      - server
+    ports:
+      - "8888:80"
