@@ -29,11 +29,10 @@ public class ShumeiServiceAdapter implements ThirdPartyServiceAdapter {
         try {
             String phone = (String) params.get("phone");
 
-            // TODO: 调用数美API
             result.put("service", "shumei_phone_risk");
             result.put("phone", phone);
-            result.put("riskLevel", 0);
-            result.put("riskType", "");
+            result.put("status", "NOT_CONFIGURED");
+            result.put("available", false);
 
         } catch (Exception e) {
             log.error("Shumei query failed", e);

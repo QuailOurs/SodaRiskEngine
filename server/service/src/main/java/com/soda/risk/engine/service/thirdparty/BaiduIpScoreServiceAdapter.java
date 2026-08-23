@@ -29,11 +29,10 @@ public class BaiduIpScoreServiceAdapter implements ThirdPartyServiceAdapter {
         try {
             String ip = (String) params.get("ip");
 
-            // TODO: 调用百度IP评分API
             result.put("service", "baidu_ip_score");
             result.put("ip", ip);
-            result.put("score", 0);
-            result.put("riskLevel", "safe");
+            result.put("status", "NOT_CONFIGURED");
+            result.put("available", false);
 
         } catch (Exception e) {
             log.error("Baidu IP score query failed", e);

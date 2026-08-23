@@ -32,12 +32,9 @@ public class TencentRiskServiceAdapter implements ThirdPartyServiceAdapter {
             String ip = (String) params.get("ip");
             String userId = (String) params.get("userId");
 
-            // TODO: 调用腾讯天御API
-            // POST https://risksec.qq.com/api/v1/risk_check
             result.put("service", "tencent_risk");
-            result.put("riskLevel", 0);
-            result.put("riskType", "");
-            result.put("score", 0);
+            result.put("status", "NOT_CONFIGURED");
+            result.put("available", false);
 
         } catch (Exception e) {
             log.error("Tencent risk query failed", e);

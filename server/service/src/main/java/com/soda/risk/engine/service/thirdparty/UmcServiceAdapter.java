@@ -30,10 +30,9 @@ public class UmcServiceAdapter implements ThirdPartyServiceAdapter {
             String userId = (String) params.get("userId");
             if (userId == null) return result;
 
-            // TODO: 调用实际的用户管理服务
-            // 当前返回空结果
             result.put("userId", userId);
-            result.put("exists", false);
+            result.put("status", "NOT_CONFIGURED");
+            result.put("available", false);
 
         } catch (Exception e) {
             log.error("UMC query failed", e);

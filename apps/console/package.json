@@ -9,6 +9,7 @@
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "test:unit": "vue-cli-service test:unit --require tests/unit/setup.js",
+    "test:unit:coverage": "vue-cli-service test:unit --require tests/unit/setup.js --coverage",
     "test:e2e": "vue-cli-service test:e2e"
   },
   "dependencies": {

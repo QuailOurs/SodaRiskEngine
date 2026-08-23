@@ -107,16 +107,22 @@ public class ExtendedCalculateService {
      */
     public boolean isInStandardDeviationRange(long featureId, long timestamp, double count, double range) {
         try {
-            // TODO: 从Redis或数据库获取历史均值和标准差
-            // String statsKey = "feature:stats:" + featureId;
-            // Map<Object, Object> stats = redisCacheService.hGetAll(statsKey);
-            // double mean = Double.parseDouble(stats.getOrDefault("mean", "0").toString());
-            // double stddev = Double.parseDouble(stats.getOrDefault("stddev", "0").toString());
-            // return Math.abs(count - mean) <= stddev * range;
-            return true;
+            if (range < 0) {
+                return false;
+            }
+            Map<Object, Object> stats = redisCacheService.hGetAll("feature:stats:" + featureId);
+            if (stats == null || !stats.containsKey("mean") || !stats.containsKey("stddev")) {
+                return false;
+            }
+            double mean = Double.parseDouble(String.valueOf(stats.get("mean")));
+            double stddev = Double.parseDouble(String.valueOf(stats.get("stddev")));
+            if (!Double.isFinite(mean) || !Double.isFinite(stddev) || stddev < 0) {
+                return false;
+            }
+            return Math.abs(count - mean) <= stddev * range;
         } catch (Exception e) {
             log.error("isInStandardDeviationRange failed, featureId={}", featureId, e);
-            return true;
+            return false;
         }
     }
 

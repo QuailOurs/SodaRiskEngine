@@ -49,7 +49,13 @@ public class RiskDecisionMessageConsumer {
         } catch (Exception e) {
             log.error("Process risk decision message failed, topic={}, offset={}",
                     record.topic(), record.offset(), e);
-            ack.acknowledge();
+            throw new MessageProcessingException("Risk decision message processing failed", e);
+        }
+    }
+
+    static class MessageProcessingException extends RuntimeException {
+        MessageProcessingException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 }

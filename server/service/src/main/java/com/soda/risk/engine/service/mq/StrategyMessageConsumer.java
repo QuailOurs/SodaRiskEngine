@@ -1,5 +1,6 @@
 package com.soda.risk.engine.service.mq;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.soda.risk.engine.api.dto.StrategyHitResult;
 import com.soda.risk.engine.core.disposer.flow.DisposerFlowService;
 import com.soda.risk.engine.core.strategy.engine.ComputeEngine;
@@ -21,6 +22,7 @@ public class StrategyMessageConsumer {
 
     private final ComputeEngine computeEngine;
     private final DisposerFlowService disposerFlowService;
+    private final ObjectMapper objectMapper;
 
     /**
      * 消费策略引擎消息
@@ -55,8 +57,7 @@ public class StrategyMessageConsumer {
         } catch (Exception e) {
             log.error("Process strategy message failed, topic={}, offset={}",
                     record.topic(), record.offset(), e);
-            // 根据业务需求决定是否重试
-            ack.acknowledge(); // 避免阻塞
+            throw new MessageProcessingException("Strategy message processing failed", e);
         }
     }
 
@@ -75,8 +76,8 @@ public class StrategyMessageConsumer {
             log.info("Received disposer message, topic={}, partition={}, offset={}",
                     record.topic(), record.partition(), record.offset());
 
-            // 解析并执行处置
-            // TODO: 解析处置消息并执行
+            StrategyHitResult hitResult = objectMapper.readValue(data, StrategyHitResult.class);
+            disposerFlowService.execute(hitResult);
 
             ack.acknowledge();
             log.debug("Disposer message processed, cost={}ms", System.currentTimeMillis() - start);
@@ -84,7 +85,13 @@ public class StrategyMessageConsumer {
         } catch (Exception e) {
             log.error("Process disposer message failed, topic={}, offset={}",
                     record.topic(), record.offset(), e);
-            ack.acknowledge();
+            throw new MessageProcessingException("Disposer message processing failed", e);
+        }
+    }
+
+    static class MessageProcessingException extends RuntimeException {
+        MessageProcessingException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 }

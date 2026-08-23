@@ -30,9 +30,9 @@ public class HunterServiceAdapter implements ThirdPartyServiceAdapter {
             String dataId = (String) params.get("dataId");
             if (dataId == null) return result;
 
-            // TODO: 调用实际的猎户处理中心
             result.put("dataId", dataId);
-            result.put("processed", false);
+            result.put("status", "NOT_CONFIGURED");
+            result.put("available", false);
 
         } catch (Exception e) {
             log.error("Hunter query failed", e);

@@ -1,8 +1,9 @@
 // https://docs.cypress.io/api/introduction/api.html
 
-describe('My First Test', () => {
-  it('Visits the app root url', () => {
-    cy.visit('/')
-    cy.contains('h1', 'Welcome to Your Vue.js App')
+describe('Soda risk console', () => {
+  it('opens the engine playground', () => {
+    cy.visit('/#/operations/playground')
+    cy.url().should('include', '/#/operations/playground')
+    cy.get('textarea').should('exist')
   })
 })
