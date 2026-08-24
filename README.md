@@ -2,7 +2,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/brand/lockup/soda-lockup-on-dark.png">
     <source media="(prefers-color-scheme: light)" srcset="assets/brand/lockup/soda-lockup-on-light.png">
-    <img src="assets/brand/lockup/soda-lockup-on-light.png" width="420" alt="Soda Risk Engine">
+    <img src="assets/brand/logo/soda-project-logo-256.png" width="420" alt="Soda Risk Engine">
   </picture>
 
   <p><strong>面向实时风险与通用业务决策的开源可配置规则引擎</strong></p>
