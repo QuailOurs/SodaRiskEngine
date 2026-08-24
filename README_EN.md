@@ -1,8 +1,8 @@
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/lockup/soda-lockup-on-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="assets/brand/lockup/soda-lockup-on-light.png">
-    <img src="assets/brand/lockup/soda-lockup-on-light.png" width="420" alt="Soda Risk Engine">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/lockup/soda-stacked-title-on-dark">
+    <source media="(prefers-color-scheme: light)" srcset="assets/brand/lockup/soda-stacked-title-on-light.png">
+    <img src="assets/brand/lockup/soda-stacked-title-on-light.png" width="420" alt="Soda Risk Engine">
   </picture>
 
   <p><strong>An open-source, configurable rule engine for real-time risk and business decisions.</strong></p>
