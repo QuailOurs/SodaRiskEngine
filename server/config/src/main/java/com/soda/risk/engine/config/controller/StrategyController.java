@@ -151,6 +151,7 @@ public class StrategyController {
     public Map<String, Object> delete(@PathVariable Long id) {
         strategyService.replaceRules(id, Collections.emptyList());
         boolean removed = strategyService.removeById(id);
+        strategyService.syncToRedis();
         ruleService.syncToRedis();
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("code", 200);

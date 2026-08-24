@@ -4,6 +4,8 @@ import com.soda.risk.engine.api.dto.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +24,12 @@ import java.util.Map;
 @RequestMapping("/api/v1/health")
 public class HealthController {
 
+    @Value("${spring.application.name:soda}")
+    private String applicationName;
+
+    @Autowired(required = false)
+    private BuildProperties buildProperties;
+
     @Autowired(required = false)
     private StringRedisTemplate redisTemplate;
 
@@ -31,7 +39,7 @@ public class HealthController {
         Map<String, Object> healthInfo = new LinkedHashMap<>();
         healthInfo.put("status", "UP");
         healthInfo.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-        healthInfo.put("version", "3.0.0");
+        healthInfo.put("version", applicationVersion());
 
         // Redis健康检查
         Map<String, Object> redisHealth = new LinkedHashMap<>();
@@ -55,10 +63,14 @@ public class HealthController {
     @GetMapping("/version")
     public Response<Map<String, String>> version() {
         Map<String, String> versionInfo = new LinkedHashMap<>();
-        versionInfo.put("name", "risk-engine");
-        versionInfo.put("version", "3.0.0");
+        versionInfo.put("name", applicationName);
+        versionInfo.put("version", applicationVersion());
         versionInfo.put("java", System.getProperty("java.version"));
         versionInfo.put("os", System.getProperty("os.name"));
         return Response.success(versionInfo);
+    }
+
+    private String applicationVersion() {
+        return buildProperties == null ? "unknown" : buildProperties.getVersion();
     }
 }

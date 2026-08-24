@@ -45,6 +45,13 @@
     "returnCodes": ["VERIFY"],
     "strategies": [],
     "preStrategies": [],
+    "detail": {
+      "sceneName": "登录保护",
+      "evaluatedStrategyCount": 1,
+      "evaluatedRuleCount": 2,
+      "dataPipelineDegraded": false,
+      "featureCostMs": 1
+    },
     "configVersion": 3,
     "costMs": 2
   },
@@ -59,6 +66,13 @@
 - `NOT_HIT`：上线和预上线策略均未命中，`hit=false`。
 
 `score`、`preScore` 分别取已命中上线、预上线策略的最高分。`strategies` 与 `preStrategies` 分开返回，便于灰度策略观察而不影响正式决策。
+
+`detail.dataPipelineDegraded` 表示数据补全或特征阶段是否发生降级，
+`featureCostMs` 是本次全部特征作业的总耗时。降级时还会返回
+`failedComplementHandlers`、`failedFeatureTypes` 或 `timedOutFeatureTypes`；它们只影响
+对应外部数据源，其余特征和策略仍继续计算。特征线程池与一次决策的共享超时预算可用
+`soda.engine.feature-workers`、`soda.engine.feature-queue-capacity` 和
+`soda.engine.feature-timeout-ms` 调整。
 
 ## 批量决策
 

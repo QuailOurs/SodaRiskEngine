@@ -50,6 +50,8 @@ public class RuleServiceImpl extends ServiceImpl<RuleMapper, Rule> implements Ru
 
     @Override
     public void syncToRedis() {
+        redisCacheService.delete(redisCacheService.keys(RedisKeyConstants.RULE_PREFIX + "*"));
+        redisCacheService.delete(redisCacheService.keys(RedisKeyConstants.SCENE_PREFIX + "*:rules"));
         List<Rule> rules = list(new LambdaQueryWrapper<Rule>().eq(Rule::getState, 1));
         for (Rule rule : rules) {
             String key = RedisKeyConstants.RULE_PREFIX + rule.getId();
@@ -64,7 +66,7 @@ public class RuleServiceImpl extends ServiceImpl<RuleMapper, Rule> implements Ru
 
         Map<Long, Rule> activeRules = rules.stream().collect(Collectors.toMap(Rule::getId, rule -> rule));
         List<Strategy> strategies = strategyMapper.selectList(
-                new LambdaQueryWrapper<Strategy>().eq(Strategy::getState, 1));
+                new LambdaQueryWrapper<Strategy>().in(Strategy::getState, 1, 2));
         Map<Long, Strategy> activeStrategies = strategies.stream()
                 .collect(Collectors.toMap(Strategy::getId, strategy -> strategy));
         List<StrategyRuleRelation> relations = relationMapper.selectList(null);

@@ -2,6 +2,8 @@ package com.soda.risk.engine.web.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.soda.risk.engine.common.cache.RedisCacheService;
+import com.soda.risk.engine.common.constants.RedisKeyConstants;
 import com.soda.risk.engine.web.config.SodaApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,7 @@ class EngineEvaluationControllerIntegrationTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
+    @Autowired private RedisCacheService cache;
 
     @Test
     void loadsConfigurationAndReturnsHitDecision() throws Exception {
@@ -54,6 +57,8 @@ class EngineEvaluationControllerIntegrationTest {
         JsonNode body = objectMapper.readTree(response);
         assertThat(body.at("/data/strategies/0/rules").size()).isGreaterThan(0);
         assertThat(body.at("/data/configVersion").asLong()).isPositive();
+        assertThat(body.at("/data/detail/dataPipelineDegraded").asBoolean()).isFalse();
+        assertThat(body.at("/data/detail/featureCostMs").isNumber()).isTrue();
     }
 
     @Test
@@ -116,5 +121,28 @@ class EngineEvaluationControllerIntegrationTest {
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data[0].sceneKey").value("login_protection"))
                 .andExpect(jsonPath("$.data[0].businessKey").value("demo_business"));
+    }
+
+    @Test
+    void degradesUnsupportedFeatureTypeButStillReturnsTheStrategyDecision() throws Exception {
+        String featureHash = RedisKeyConstants.SCENE_PREFIX + "login_protection:features";
+        String testFeature = "unsupported_release_test";
+        cache.hSet(featureHash, testFeature, "unsupported:" + testFeature);
+        try {
+            mockMvc.perform(post("/api/v1/engine/evaluate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"businessKey":"demo_business","sceneKey":"login_protection",
+                                     "needDetail":true,"data":{"blacklisted":true}}
+                                    """))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(0))
+                    .andExpect(jsonPath("$.data.status").value("HIT"))
+                    .andExpect(jsonPath("$.data.hit").value(true))
+                    .andExpect(jsonPath("$.data.detail.dataPipelineDegraded").value(true))
+                    .andExpect(jsonPath("$.data.detail.failedFeatureTypes[0]").value("unsupported"));
+        } finally {
+            cache.hDelete(featureHash, testFeature);
+        }
     }
 }

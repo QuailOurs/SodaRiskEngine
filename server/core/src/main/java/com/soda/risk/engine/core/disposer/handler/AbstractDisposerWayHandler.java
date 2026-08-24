@@ -76,7 +76,10 @@ public abstract class AbstractDisposerWayHandler {
     public abstract boolean supports(String disposerType);
 
     protected String getUserId(StrategyHitResult hitResult) {
-        if (hitResult.getExtra() != null) {
+        if (hitResult != null && hitResult.getUserId() != null && !hitResult.getUserId().isBlank()) {
+            return hitResult.getUserId();
+        }
+        if (hitResult != null && hitResult.getExtra() != null) {
             Object userId = hitResult.getExtra().get("userId");
             return userId != null ? userId.toString() : "unknown";
         }

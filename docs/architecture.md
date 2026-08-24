@@ -104,14 +104,17 @@ sequenceDiagram
     participant B as 业务系统
     participant A as Engine API
     participant R as Runtime
+    participant C as Complement Handlers
     participant F as Feature Handlers
     participant E as Aviator
 
     B->>A: businessKey + sceneKey + data
     A->>R: evaluate(request)
     R->>R: 校验业务方和场景
-    R->>F: 获取或计算特征
-    F-->>R: feature map
+    R->>C: 按处理器补全请求数据
+    C-->>R: enriched data + degradation
+    R->>F: 按类型并行获取或计算特征
+    F-->>R: feature map + failure/timeout types
     loop 场景内规则
         R->>E: 计算表达式
         E-->>R: true / false
@@ -124,7 +127,9 @@ sequenceDiagram
 ## 扩展点
 
 - 新规则函数：在 `core/strategy/engine/function` 中实现并注册 Aviator 函数。
+- 新数据补全源：实现 `DataComplementHandler`，只返回新增或覆盖字段。
 - 新特征类型：实现 `FeatureHandler`，通过 Spring 注入处理器集合。
+- 新配置同步域：注册 `ConfigSyncContributor` 并声明依赖顺序。
 - 外部服务：实现 `ThirdPartyServiceAdapter`，在 `service` 层隔离协议和容错。
 - 处置动作：扩展 `AbstractDisposerWayHandler`。
 - 缓存与日志：实现相应适配器，保持领域模型不感知具体基础设施。
@@ -135,3 +140,6 @@ sequenceDiagram
 - Redis、Kafka 和 Elasticsearch 集成已有接口，但不是本地运行前提。
 - 演示认证只在 `dev` profile 注册；生产环境必须接入正式身份系统。
 - 配置管理接口仍包含为控制台保留的兼容路径，后续版本会逐步统一为 `/api/v1`。
+
+原始工程架构的对比、取舍和落地细节见
+[原始策略引擎架构借鉴与落地记录](original-engine-architecture-adoption.md)。

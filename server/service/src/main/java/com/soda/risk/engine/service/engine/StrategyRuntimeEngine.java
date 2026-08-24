@@ -10,6 +10,10 @@ import com.soda.risk.engine.config.strategy.Strategy;
 import com.soda.risk.engine.config.strategy.StrategyRuleRelation;
 import com.soda.risk.engine.config.strategy.StrategyRuleRelationMapper;
 import com.soda.risk.engine.config.strategy.StrategyService;
+import com.soda.risk.engine.core.strategy.complement.DataComplementResult;
+import com.soda.risk.engine.core.strategy.complement.DataComplementService;
+import com.soda.risk.engine.core.strategy.feature.FeatureQueryResult;
+import com.soda.risk.engine.core.strategy.feature.FeatureService;
 import com.soda.risk.engine.core.strategy.rule.RuleExpressionEvaluator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +46,8 @@ public class StrategyRuntimeEngine {
     private final StrategyRuleRelationMapper relationMapper;
     private final JdbcTemplate jdbcTemplate;
     private final RuleExpressionEvaluator expressionEvaluator;
+    private final DataComplementService dataComplementService;
+    private final FeatureService featureService;
 
     private final AtomicReference<RuntimeSnapshot> snapshot =
             new AtomicReference<>(RuntimeSnapshot.empty());
@@ -159,6 +165,12 @@ public class StrategyRuntimeEngine {
         input.putIfAbsent("requestId", requestId);
         input.put("traceId", traceId);
 
+        // 沿用原引擎的“预处理/补全 -> 特征作业 -> 策略计算”模板，并保留结构化降级信息。
+        DataComplementResult complementResult = dataComplementService.complete(request.getSceneKey(), input);
+        input = new LinkedHashMap<>(complementResult.data());
+        FeatureQueryResult featureResult = featureService.queryFeatures(input, request.getSceneKey());
+        input.putAll(featureResult.values());
+
         List<StrategyMatchResult> onlineHits = new ArrayList<>();
         List<StrategyMatchResult> preOnlineHits = new ArrayList<>();
         int evaluatedRuleCount = 0;
@@ -191,6 +203,15 @@ public class StrategyRuntimeEngine {
         detail.put("sceneName", scene.name());
         detail.put("evaluatedStrategyCount", scene.strategies().size());
         detail.put("evaluatedRuleCount", evaluatedRuleCount);
+        detail.put("dataPipelineDegraded", complementResult.degraded() || featureResult.degraded());
+        detail.put("featureCostMs", featureResult.costMs());
+        if (complementResult.degraded()) {
+            detail.put("failedComplementHandlers", complementResult.failedHandlers());
+        }
+        if (featureResult.degraded()) {
+            detail.put("failedFeatureTypes", featureResult.failedTypes());
+            detail.put("timedOutFeatureTypes", featureResult.timedOutTypes());
+        }
         if (request.isNeedDetail()) detail.put("input", request.getData());
 
         return EngineDecisionResult.builder()

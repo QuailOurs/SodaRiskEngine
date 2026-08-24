@@ -22,7 +22,7 @@ public class CalculationFeatureHandler implements FeatureHandler {
 
     @Override
     public boolean supports(String featureType) {
-        return "calculation".equalsIgnoreCase(featureType) || "statistics".equalsIgnoreCase(featureType);
+        return "calculation".equalsIgnoreCase(featureType);
     }
 
     @Override

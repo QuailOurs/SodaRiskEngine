@@ -55,8 +55,8 @@ public class AuthenticationService {
             return openId;
         }
         // 如果Redis中没有映射，尝试直接使用openKey作为openId
-        Object businessSide = redisCacheService.hGetAll(RedisKeyConstants.BUSINESS_SIDE_OPENID + openKey);
-        if (businessSide != null) {
+        var businessSide = redisCacheService.hGetAll(RedisKeyConstants.BUSINESS_SIDE_OPENID + openKey);
+        if (businessSide != null && !businessSide.isEmpty()) {
             return openKey;
         }
         return null;

@@ -8,10 +8,13 @@ import com.soda.risk.engine.common.monitor.MonitorFacade;
 import com.soda.risk.engine.common.cache.RedisCacheService;
 import com.soda.risk.engine.common.constants.RedisKeyConstants;
 import com.soda.risk.engine.common.util.CommonUtils;
+import com.soda.risk.engine.core.strategy.complement.DataComplementService;
+import com.soda.risk.engine.core.strategy.complement.DeviceDataComplementHandler;
+import com.soda.risk.engine.core.strategy.complement.IpDataComplementHandler;
 import com.soda.risk.engine.core.strategy.feature.FeatureService;
 import com.soda.risk.engine.core.strategy.rule.RuleService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -28,13 +31,32 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class ComputeEngineImpl extends ComputeEngine {
 
     private final ObjectMapper objectMapper;
     private final FeatureService featureService;
     private final RuleService ruleService;
     private final RedisCacheService redisCacheService;
+    private final DataComplementService dataComplementService;
+
+    @Autowired
+    public ComputeEngineImpl(ObjectMapper objectMapper, FeatureService featureService,
+                             RuleService ruleService, RedisCacheService redisCacheService,
+                             DataComplementService dataComplementService) {
+        this.objectMapper = objectMapper;
+        this.featureService = featureService;
+        this.ruleService = ruleService;
+        this.redisCacheService = redisCacheService;
+        this.dataComplementService = dataComplementService;
+    }
+
+    /** 保留非 Spring 嵌入调用的兼容构造方式。 */
+    public ComputeEngineImpl(ObjectMapper objectMapper, FeatureService featureService,
+                             RuleService ruleService, RedisCacheService redisCacheService) {
+        this(objectMapper, featureService, ruleService, redisCacheService,
+                new DataComplementService(List.of(
+                        new IpDataComplementHandler(), new DeviceDataComplementHandler())));
+    }
 
     @Override
     protected Map<String, Object> pretreatment(String data, String sceneKey, String openKey) {
@@ -57,7 +79,7 @@ public class ComputeEngineImpl extends ComputeEngine {
             dataMap.put("processTime", System.currentTimeMillis());
 
             // 数据补全：补充 IP 归属地等外部数据
-            dataMap = complementData(dataMap, sceneKey);
+            dataMap = new LinkedHashMap<>(dataComplementService.complete(sceneKey, dataMap).data());
 
             // 参数类型标准化，确保表达式获得正确的数据类型
             dataMap = normalizeParameters(dataMap);
@@ -133,34 +155,6 @@ public class ComputeEngineImpl extends ComputeEngine {
                     .openId(openKey)
                     .build();
         }
-    }
-
-    // ======================== 数据补全 ========================
-
-    /**
-     * 数据补全 - 补充IP归属地等外部数据
-     * 可通过适配器接入 IP、设备等外部数据源
-     */
-    private Map<String, Object> complementData(Map<String, Object> dataMap, String sceneKey) {
-        try {
-            // IP归属地补全（如果有IP字段）
-            String ip = (String) dataMap.getOrDefault("ip", dataMap.getOrDefault("userIp", null));
-            if (ip != null && !ip.isEmpty()) {
-                dataMap.put("ipProvince", "");
-                dataMap.put("ipCity", "");
-                dataMap.put("ipIsp", "");
-                // TODO: 接入IP查询服务（如百度IP库、淘宝IP库等）
-            }
-            // 设备指纹补全
-            String deviceId = (String) dataMap.getOrDefault("deviceId", null);
-            if (deviceId != null) {
-                dataMap.put("deviceRisk", "NORMAL");
-                // TODO: 接入设备指纹服务
-            }
-        } catch (Exception e) {
-            log.warn("Data complement failed, sceneKey={}", sceneKey, e);
-        }
-        return dataMap;
     }
 
     /**
