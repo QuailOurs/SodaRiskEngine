@@ -46,13 +46,24 @@ public class RuleService {
 
             // 逐个评估规则
             for (String ruleId : ruleIds) {
+                Long parsedRuleId;
                 try {
-                    RuleHitResult result = evaluateSingleRule(allData, Long.parseLong(ruleId));
+                    parsedRuleId = Long.parseLong(ruleId);
+                } catch (NumberFormatException e) {
+                    log.error("Invalid rule id: {}", ruleId);
+                    results.add(RuleHitResult.builder()
+                            .hit(false)
+                            .detail("规则ID无效: " + ruleId)
+                            .build());
+                    continue;
+                }
+                try {
+                    RuleHitResult result = evaluateSingleRule(allData, parsedRuleId);
                     results.add(result);
                 } catch (Exception e) {
                     log.error("Evaluate rule failed, ruleId={}", ruleId, e);
                     results.add(RuleHitResult.builder()
-                            .ruleId(Long.parseLong(ruleId))
+                            .ruleId(parsedRuleId)
                             .hit(false)
                             .detail("规则评估异常: " + e.getMessage())
                             .build());

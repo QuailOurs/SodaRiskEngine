@@ -55,6 +55,8 @@ public class RiskDecisionEngine {
         // 风险识别 - 使用account_security场景策略
         handlers.put("RISK_IDENTIFICATION", data -> decisionService.decideWithStrategy(
                 data, String.valueOf(data.getOrDefault("openId", "")), "account_security"));
+        handlers.put("ACCOUNT_SECURITY", data -> decisionService.decideWithStrategy(
+                data, String.valueOf(data.getOrDefault("openId", "")), "account_security"));
     }
 
     /**
@@ -127,7 +129,10 @@ public class RiskDecisionEngine {
         if (StringUtils.isBlank(businessType)) {
             return "";
         }
-        return businessType.toUpperCase().replace(" ", "_");
+        return businessType.trim()
+                .replaceAll("([a-z0-9])([A-Z])", "$1_$2")
+                .replaceAll("[\\s-]+", "_")
+                .toUpperCase();
     }
 
     private String getServerIp() {

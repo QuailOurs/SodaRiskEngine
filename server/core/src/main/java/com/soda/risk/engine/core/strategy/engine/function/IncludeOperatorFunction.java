@@ -20,6 +20,7 @@ public class IncludeOperatorFunction extends AbstractFunction {
     public AviatorObject call(Map<String, Object> env, AviatorObject a, AviatorObject b) {
         String src = FunctionUtils.getStringValue(a, env);
         String[] destArr = StringUtils.split(FunctionUtils.getStringValue(b, env), ',');
+        if (src == null || destArr == null) return AviatorBoolean.FALSE;
         for (String dest : destArr) {
             if (StringUtils.contains(src, dest)) {
                 return AviatorBoolean.TRUE;

@@ -31,14 +31,16 @@ public class StrategyServiceImpl extends ServiceImpl<StrategyMapper, Strategy> i
     public Strategy getBySceneKey(String sceneKey) {
         return getOne(new LambdaQueryWrapper<Strategy>()
                 .eq(Strategy::getSceneKey, sceneKey)
-                .eq(Strategy::getState, 1)
+                .in(Strategy::getState, 1, 2)
                 .last("LIMIT 1"));
     }
 
     @Override
     public void syncToRedis() {
+        redisCacheService.delete(redisCacheService.keys(RedisKeyConstants.STRATEGY_PREFIX + "*"));
+        redisCacheService.delete(redisCacheService.keys(RedisKeyConstants.SCENE_ROUTE_MAP + "*"));
         List<Strategy> strategies = list(new LambdaQueryWrapper<Strategy>()
-                .eq(Strategy::getState, 1));
+                .in(Strategy::getState, 1, 2));
         for (Strategy strategy : strategies) {
             syncToRedis(strategy);
         }
@@ -47,10 +49,8 @@ public class StrategyServiceImpl extends ServiceImpl<StrategyMapper, Strategy> i
 
     @Override
     public void syncToRedis(Long strategyId) {
-        Strategy strategy = getById(strategyId);
-        if (strategy != null) {
-            syncToRedis(strategy);
-        }
+        // 状态切换可能需要删除旧路由或改由同场景的其他策略接管，因此必须重建完整映射。
+        syncToRedis();
     }
 
     @Override

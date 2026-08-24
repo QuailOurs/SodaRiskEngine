@@ -26,7 +26,7 @@ public class BanDisposerHandler extends AbstractDisposerWayHandler {
         long durationDays = getDuration(hitResult);
 
         try {
-            String banKey = RedisKeyConstants.OFFLINE_LOCK + "ban:" + userId;
+            String banKey = RedisKeyConstants.DISPOSER_USER + userId + ":BAN";
             redisCacheService.set(banKey, "BANNED", durationDays, TimeUnit.DAYS);
 
             log.info("Account banned, userId={}, duration={}days", userId, durationDays);

@@ -21,6 +21,7 @@ Soda 既可以用于登录保护、注册防刷、账号安全、名单校验等
 - 使用 Aviator 表达式定义可解释的布尔规则。
 - 通过优先级、阈值和逻辑关系组合规则形成策略。
 - 以不可变快照加载运行配置，支持定时刷新和手动原子重载。
+- 通过可插拔数据补全和并行特征作业隔离外部数据源，支持统一超时与降级明细。
 - 提供单笔、批量决策 HTTP API，并返回命中规则、得分和 trace ID。
 - 提供可视化配置控制台和引擎调试台。
 - Redis、Kafka、Elasticsearch 均为可选集成，开发环境可零中间件运行。
@@ -30,11 +31,12 @@ Soda 既可以用于登录保护、注册防刷、账号安全、名单校验等
 ```mermaid
 flowchart LR
     A[业务请求] --> B[场景路由]
-    B --> C[参数与特征]
-    C --> D[规则表达式]
-    D --> E[策略编排]
-    E --> F[决策结果]
-    F --> G[处置扩展]
+    B --> C[参数标准化与数据补全]
+    C --> D[并行特征作业]
+    D --> E[规则表达式]
+    E --> F[策略编排]
+    F --> G[决策结果与降级明细]
+    G --> H[处置扩展]
 ```
 
 配置修改不会直接影响正在执行的请求。Soda 会先完整构建新版本快照，成功后再
@@ -124,11 +126,14 @@ curl -X POST http://localhost:9999/api/v1/engine/evaluate \
 | [快速开始](docs/quick-start.md) | 本地运行、Docker 启动和首次验证 |
 | [技术栈](docs/technology-stack.md) | 前后端组件、版本与用途 |
 | [架构设计](docs/architecture.md) | 分层、模块依赖、配置与执行链路 |
+| [原始架构借鉴记录](docs/original-engine-architecture-adoption.md) | 原始工程对比、架构取舍、落地改造与验证 |
 | [功能矩阵](docs/function-matrix.md) | 页面、接口和数据模型对应关系 |
 | [HTTP API](docs/http-engine-api.md) | 引擎接入契约和错误码 |
 | [数据库](database/README.md) | H2、MySQL 初始化和脚本说明 |
 | [品牌资产](assets/brand/README.md) | Logo、favicon、导航栏和应用图标使用规范 |
 | [开发指南](docs/development.md) | 编码、测试和提交前检查 |
+| [验证与修复记录](docs/verification-and-fixes-next-tag.md) | 下一 tag 的功能验证矩阵、修复项和发布前检查 |
+| [v2.0.0 候选发布说明](docs/tag-release-notes-v2.0.0.md) | 中文 tag 变更摘要、验证结果、兼容提示与发布清单 |
 | [安全策略](SECURITY.md) | 漏洞报告与生产安全边界 |
 
 ## 参与贡献

@@ -90,15 +90,10 @@ public enum ExpressionOperatorTypeEnum {
      * @return 表达式字符串
      */
     public static String createExpression(String expressOperator, CharSequence sequence, CharSequence searchString) {
-        if (StringUtils.isBlank(expressOperator)) {
+        if (StringUtils.isBlank(expressOperator) || sequence == null || searchString == null) {
             return null;
         }
-        ExpressionOperatorTypeEnum type = getTypeEnum(expressOperator);
-        CharSequence[] searchStrings = new String[]{searchString.toString()};
-        if (type.isNeedSplit()) {
-            searchStrings = StringUtils.split(searchString.toString(), SEPARATOR);
-        }
-        return type.buildExpression(sequence, searchStrings);
+        return buildRuleExpression(sequence.toString(), expressOperator, searchString.toString());
     }
 
     /**
@@ -122,13 +117,15 @@ public enum ExpressionOperatorTypeEnum {
             return fieldKey + "=~/" + value + "/";
         }
         // 字段操作符
-        if (type == FIELD_EQUAL || type == FIELD_NOT_EQUAL || type == FIELD_EXISTS
-                || type == FIELD_NOT_EXISTS || type == FIELD_INCLUDE || type == FIELD_NOT_INCLUDE) {
+        if (type == FIELD_EXISTS || type == FIELD_NOT_EXISTS) {
+            return type.getValue() + "('" + fieldKey + "')";
+        }
+        if (type == FIELD_EQUAL || type == FIELD_NOT_EQUAL || type == FIELD_INCLUDE || type == FIELD_NOT_INCLUDE) {
             return type.getValue() + "('" + fieldKey + "','" + value + "')";
         }
         // 空对象判断
         if (type == EQUAL_NULL_OBJECT) {
-            return type.getValue() + "(" + fieldKey + ",'" + value + "')";
+            return type.getValue() + "(" + fieldKey + ")";
         }
         // 字符串操作
         if (type == EQUAL_STRING || type == NOT_EQUAL_STRING) {
@@ -136,7 +133,7 @@ public enum ExpressionOperatorTypeEnum {
         }
         // 长度操作
         if (type == LENGTH_MORE_THAN_AND || type == LENGTH_LESS_THAN_AND) {
-            return type.getValue() + "('" + fieldKey + "'," + value + ")";
+            return type.getValue() + "(" + fieldKey + "," + value + ")";
         }
         // 指标合并操作
         if (type.name().startsWith("INDEX_MERGE")) {

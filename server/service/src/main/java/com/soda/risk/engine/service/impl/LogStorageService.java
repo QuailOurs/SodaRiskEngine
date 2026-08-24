@@ -9,8 +9,11 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -56,21 +59,14 @@ public class LogStorageService {
     public void storeStrategyHitLog(Map<String, Object> logData) {
         long start = System.currentTimeMillis();
         try {
-            String traceId = (String) logData.getOrDefault("traceId", "");
+            String traceId = ensureTraceId(logData);
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             logData.put("timestamp", timestamp);
             logData.put("logType", "STRATEGY_HIT");
 
             String jsonLog = objectMapper.writeValueAsString(logData);
 
-            if (kafkaAvailable) {
-                kafkaTemplate.send(LOG_TOPIC, traceId, jsonLog);
-            }
-            if (redisAvailable) {
-                redisTemplate.opsForValue().set(LOG_REDIS_PREFIX + traceId, jsonLog, 24 * 3600);
-            } else {
-                memoryLogStore.put(traceId, jsonLog);
-            }
+            store(traceId, jsonLog);
 
             MonitorFacade.insert("[log]StoreStrategyHit", System.currentTimeMillis() - start);
         } catch (Exception e) {
@@ -84,14 +80,12 @@ public class LogStorageService {
     public void storeDisposerLog(Map<String, Object> logData) {
         long start = System.currentTimeMillis();
         try {
-            String traceId = (String) logData.getOrDefault("traceId", "");
+            String traceId = ensureTraceId(logData);
             logData.put("logType", "DISPOSER");
             logData.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
             String jsonLog = objectMapper.writeValueAsString(logData);
-            if (kafkaAvailable) {
-                kafkaTemplate.send(LOG_TOPIC, traceId, jsonLog);
-            }
+            store(traceId, jsonLog);
 
             MonitorFacade.insert("[log]StoreDisposer", System.currentTimeMillis() - start);
         } catch (Exception e) {
@@ -105,14 +99,12 @@ public class LogStorageService {
     public void storeRiskDecisionLog(Map<String, Object> logData) {
         long start = System.currentTimeMillis();
         try {
-            String traceId = (String) logData.getOrDefault("traceId", "");
+            String traceId = ensureTraceId(logData);
             logData.put("logType", "RISK_DECISION");
             logData.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
             String jsonLog = objectMapper.writeValueAsString(logData);
-            if (kafkaAvailable) {
-                kafkaTemplate.send(LOG_TOPIC, traceId, jsonLog);
-            }
+            store(traceId, jsonLog);
 
             MonitorFacade.insert("[log]StoreRiskDecision", System.currentTimeMillis() - start);
         } catch (Exception e) {
@@ -132,6 +124,24 @@ public class LogStorageService {
         } catch (Exception e) {
             log.error("Query log by traceId failed", e);
             return null;
+        }
+    }
+
+    private String ensureTraceId(Map<String, Object> logData) {
+        String traceId = Objects.toString(logData.get("traceId"), "");
+        if (traceId.isBlank()) {
+            traceId = UUID.randomUUID().toString().replace("-", "");
+            logData.put("traceId", traceId);
+        }
+        return traceId;
+    }
+
+    private void store(String traceId, String jsonLog) {
+        if (kafkaAvailable) kafkaTemplate.send(LOG_TOPIC, traceId, jsonLog);
+        if (redisAvailable) {
+            redisTemplate.opsForValue().set(LOG_REDIS_PREFIX + traceId, jsonLog, Duration.ofHours(24));
+        } else {
+            memoryLogStore.put(traceId, jsonLog);
         }
     }
 }

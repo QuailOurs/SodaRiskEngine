@@ -1,13 +1,8 @@
 package com.soda.risk.engine.config.controller;
 
 import com.soda.risk.engine.api.dto.Response;
-import com.soda.risk.engine.config.disposer.DisposerConfigService;
-import com.soda.risk.engine.config.feature.BaseInfoFeatureService;
-import com.soda.risk.engine.config.riskdecision.BlackWhiteListService;
-import com.soda.risk.engine.config.riskdecision.RiskConfigService;
-import com.soda.risk.engine.config.rule.RuleService;
-import com.soda.risk.engine.config.scene.SceneService;
-import com.soda.risk.engine.config.strategy.StrategyService;
+import com.soda.risk.engine.config.sync.ConfigSyncCoordinator;
+import com.soda.risk.engine.config.sync.ConfigSyncReport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -21,92 +16,67 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class ConfigSyncController {
 
-    private final StrategyService strategyService;
-    private final RuleService ruleService;
-    private final SceneService sceneService;
-    private final BaseInfoFeatureService baseInfoFeatureService;
-    private final DisposerConfigService disposerConfigService;
-    private final RiskConfigService riskConfigService;
-    private final BlackWhiteListService blackWhiteListService;
+    private final ConfigSyncCoordinator syncCoordinator;
 
     /**
      * 同步所有配置到Redis
      */
     @PostMapping("/all")
-    public Response<String> syncAll() {
-        long start = System.currentTimeMillis();
-        try {
-            strategyService.syncToRedis();
-            ruleService.syncToRedis();
-            sceneService.syncToRedis();
-            baseInfoFeatureService.syncToRedis();
-            disposerConfigService.syncToRedis();
-            riskConfigService.syncToRedis();
-            blackWhiteListService.syncToRedis();
-
-            long cost = System.currentTimeMillis() - start;
-            String msg = "All configs synced to Redis, cost: " + cost + "ms";
-            log.info(msg);
-            return Response.success(msg);
-
-        } catch (Exception e) {
-            log.error("Sync all configs failed", e);
-            return Response.fail(-1, "Sync failed: " + e.getMessage());
-        }
+    public Response<ConfigSyncReport> syncAll() {
+        return respond(syncCoordinator.syncAll());
     }
 
     /**
      * 同步策略配置
      */
     @PostMapping("/strategy")
-    public Response<String> syncStrategy() {
-        strategyService.syncToRedis();
-        return Response.success("Strategy config synced");
+    public Response<ConfigSyncReport> syncStrategy() {
+        return respond(syncCoordinator.syncDomains(java.util.List.of("strategy")));
     }
 
     /**
      * 同步规则配置
      */
     @PostMapping("/rule")
-    public Response<String> syncRule() {
-        ruleService.syncToRedis();
-        return Response.success("Rule config synced");
+    public Response<ConfigSyncReport> syncRule() {
+        return respond(syncCoordinator.syncDomains(java.util.List.of("rule")));
     }
 
     /**
      * 同步场景配置
      */
     @PostMapping("/scene")
-    public Response<String> syncScene() {
-        sceneService.syncToRedis();
-        return Response.success("Scene config synced");
+    public Response<ConfigSyncReport> syncScene() {
+        return respond(syncCoordinator.syncDomains(java.util.List.of("scene")));
     }
 
     /**
      * 同步特征配置
      */
     @PostMapping("/feature")
-    public Response<String> syncFeature() {
-        baseInfoFeatureService.syncToRedis();
-        return Response.success("Feature config synced");
+    public Response<ConfigSyncReport> syncFeature() {
+        return respond(syncCoordinator.syncDomains(java.util.List.of("feature")));
     }
 
     /**
      * 同步处置配置
      */
     @PostMapping("/disposer")
-    public Response<String> syncDisposer() {
-        disposerConfigService.syncToRedis();
-        return Response.success("Disposer config synced");
+    public Response<ConfigSyncReport> syncDisposer() {
+        return respond(syncCoordinator.syncDomains(java.util.List.of("disposer")));
     }
 
     /**
      * 同步风险决策配置
      */
     @PostMapping("/risk")
-    public Response<String> syncRisk() {
-        riskConfigService.syncToRedis();
-        blackWhiteListService.syncToRedis();
-        return Response.success("Risk config synced");
+    public Response<ConfigSyncReport> syncRisk() {
+        return respond(syncCoordinator.syncDomains(java.util.List.of("risk", "black-white")));
+    }
+
+    private Response<ConfigSyncReport> respond(ConfigSyncReport report) {
+        log.info("Config sync completed: success={}, skipped={}, costMs={}, steps={}",
+                report.success(), report.skipped(), report.costMs(), report.steps().size());
+        return Response.success(report);
     }
 }

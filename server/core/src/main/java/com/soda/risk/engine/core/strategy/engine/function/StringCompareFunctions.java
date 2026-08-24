@@ -77,6 +77,7 @@ public class StringCompareFunctions {
         public AviatorObject call(Map<String, Object> env, AviatorObject a, AviatorObject b) {
             String src = FunctionUtils.getStringValue(a, env);
             String[] destArr = StringUtils.split(FunctionUtils.getStringValue(b, env), ',');
+            if (src == null || destArr == null) return AviatorBoolean.FALSE;
             for (String dest : destArr) {
                 if (StringUtils.startsWith(src, dest)) {
                     return AviatorBoolean.TRUE;
@@ -100,6 +101,7 @@ public class StringCompareFunctions {
         public AviatorObject call(Map<String, Object> env, AviatorObject a, AviatorObject b) {
             String src = FunctionUtils.getStringValue(a, env);
             String[] destArr = StringUtils.split(FunctionUtils.getStringValue(b, env), ',');
+            if (src == null || destArr == null) return AviatorBoolean.FALSE;
             for (String dest : destArr) {
                 if (StringUtils.endsWith(src, dest)) {
                     return AviatorBoolean.TRUE;

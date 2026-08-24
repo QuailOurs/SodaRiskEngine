@@ -84,7 +84,7 @@ public class LockDisposerHandler extends AbstractDisposerWayHandler {
 
         try {
             // 设置锁定状态到Redis
-            String lockKey = RedisKeyConstants.OFFLINE_LOCK + userId;
+            String lockKey = RedisKeyConstants.DISPOSER_USER + userId + ":LOCK";
             redisCacheService.set(lockKey, "LOCKED", durationMinutes, TimeUnit.MINUTES);
 
             // 更新今日锁定计数
